@@ -25,7 +25,7 @@ class Expedition:
         self.fleet = fleet
         fleet.setRunningExpedition(self)
         Log.i("Fleet " + str(fleet.id) + " has started expedition " + str(self.id))
-        Log.i("    will return at " + self.endTime.time().__str__().split('.')[0])
+        Log.i("    will return at " + str(self.endTime.time()).split('.')[0])
         return self.endTime
 
     def getResult(self):
