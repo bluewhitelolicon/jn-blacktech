@@ -80,6 +80,8 @@ class Connection:
         cookie = resp.getheader('Set-Cookie')
         if cookie is not None:
             self.setCookie(cookie)
+        if 'eid' in data:
+            Log.w('eid:' + data['eid'])
         Log.v(data)
         return data
 
