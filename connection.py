@@ -81,7 +81,7 @@ class Connection:
         if cookie is not None:
             self.setCookie(cookie)
         if 'eid' in data:
-            Log.w('eid:' + data['eid'])
+            Log.w('eid:%d' % data['eid'])
         Log.v(data)
         return data
 

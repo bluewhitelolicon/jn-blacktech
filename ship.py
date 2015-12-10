@@ -33,3 +33,11 @@ class Ship:
 
     def isFilled(self):
         return self.fuel == self.shipClass.fuel and self.ammo == self.shipClass.ammo
+
+    def setFilled(self):
+        self.fuel = self.shipClass.fuel
+        self.ammo = self.shipClass.ammo
+
+    def dismantle(self):
+        self.game.dismantleShip(self)
+        self.game.removeShip(self)

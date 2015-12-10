@@ -27,7 +27,7 @@ class Game:
             self.expeditions[expedition.id] = expedition
 
         Log.i('Logging in...')
-        loginData = self.conn.get('/index/passportLogin/' + account['username'] + '/' + account['password'] + '/')
+        loginData = self.conn.get('/index/passportLogin/%s/%s/' % (account['username'], account['password']))
         self.conn.setServer(account['server'])
         self.conn.get('//index/login/' + loginData['userId'])
 
@@ -59,52 +59,84 @@ class Game:
     def getFleet(self, id_):
         return self.fleets[id_ - 1]
 
+    def addShip(self, ship):
+        self.ships[ship.id] = ship
+
     def addResource(self, res):
         pass # TODO
+
+    def removeShip(self, ship):
+        del self.ships[ship.id]
+
+    # Ship
+
+    def repair(self, ship, pos):
+        self.conn.get('/boat/repair/%d/%d/' % (ship.id, pos))
+
+    def repairComplete(self, ship, pos):
+        self.conn.get('/boat/repairComplete/%d/%d/' % (pos, ship.id))
+
+    def dismantleShip(self, ship, keepEquipt = False):
+        self.conn.get('/dock/dismantleBoat/[%d]/%d/' % (ship.id, (0 if keepEquipt else 1)))
+
+    # Fleet
+
+    def changeShips(self, fleet, ships):
+        ships = [ ship.id for ship in ships ]
+        ships = str(ships).replace(' ', '')
+        self.conn.get('/boat/instantFleet/%d/%s/' % (fleet.id, ships))
+
+    def changeShip(self, fleet, pos, ship):
+        self.conn.get('/boat/changeBoat/%d/%d/%d/' % (fleet.id, ship.id, pos))
+
+    def fill(self, fleet):
+        ships = [ ship.id for ship in fleet.ships ]
+        ships = str(ships).replace(' ', '')
+        self.conn.get('/boat/supplyBoats/%s/' % ships)
 
     # Expedition
 
     def startExpedition(self, exp, fleet):
-        data = self.conn.post('/explore/start/' + str(fleet.id) + '/' + str(exp.id) + '/', 'pve_level=1')
+        data = self.conn.post('/explore/start/%d/%d/' % (fleet.id, exp.id), 'pve_level=1')
         for expData in data['pveExploreVo']['levels']:
             if int(expData['exploreId']) == exp.id:
                 return datetime.fromtimestamp(int(expData['endTime']))
         Log.e('startExpedition: unexpected response')
 
     def getExpeditionResult(self, exp):
-        data = self.conn.get('/explore/getResult/' + str(exp.id))
+        data = self.conn.get('/explore/getResult/%d/' % exp.id)
         return (int(data['bigSuccess']) == 1), self.packer.makeResource(data['newAward'])
 
     # Battle
 
     def startStage(self, stageId, fleet):
-        self.conn.get('/pve/challenge129/' + str(stageId) + '/' + str(fleet.id) + '/0')
+        self.conn.post('/pve/challenge/%d/%d/0/' % (stageId, fleet.id), 'pve_level=1')
 
     def quitStage(self):
-        self.conn.get('/pve/pveEnd/')
-        self.conn.get('/active/getUserData')  # faking official client
+        # faking official client
+        self.conn.get('/active/getUserData/')
+        self.conn.get('/pve/getUserData/')
+        self.conn.get('/campaign/getUserData/')
 
     def nextSpot(self):
         data = self.conn.get('/pve/next/')
         return int(data['node'])
 
     def searchEnemy(self, spot):
-        data = self.conn.get('/pve/spy/' + str(spot))
-        # FIXME: return what?
+        data = self.conn.get('/pve/spy/')
+        if int(data['enemyVO']['isFound']) == 0:
+            return [ ]
+        return [ int(ship['type']) for ship in data['enemyVO']['enemyShips'] ]
 
     def engage(self, spot, fleet, formation):
-        data = self.conn.get('/pve/deal/' + str(spot) + '/' + str(fleet.id) + '/' + str(formation))
-        selfHp = data['hpBeforeNightWarSelf']
-        enemyHp = data['hpBeforeNightWarEnemy']
+        data = self.conn.get('/pve/deal/%d/%d/%d/' % (spot, fleet.id, formation))
+        selfHp = data['warReport']['hpBeforeNightWarSelf']
+        enemyHp = data['warReport']['hpBeforeNightWarEnemy']
         lastSpot = (int(data['pveLevelEnd']) == 1)
+        return selfHp, enemyHp, lastSpot
 
     def getBattleResult(self, doNightBattle):
-        url = '/pve/getWarResult/'
-        if doNightBattle:
-            url += '1'
-        else:
-            url += '0'
-        data = self.conn.get(url)
+        data = self.conn.get('/pve/getWarResult/%d/' % (1 if doNightBattle else 0))
 
         newShip = None
         if 'newShipVO' in data:
