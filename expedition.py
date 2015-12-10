@@ -16,13 +16,14 @@ class Expedition:
     def setStatus(self, fleet, endTime):
         self.fleet = fleet
         self.endTime = endTime
+        fleet.setRunningExpedition(self)
 
     def start(self, fleet):
         if not fleet.isReady() or not self.fleetRequirement.acceptFleet(fleet):
             return None
-        self.endTime = self.game.startExpedition(exp, fleet)
+        self.endTime = self.game.startExpedition(self, fleet)
         self.fleet = fleet
-        fleet.setRunningExpedition(True)
+        fleet.setRunningExpedition(self)
         Log.i("Fleet " + str(fleet.id) + " has started expedition " + str(self.id))
         Log.i("    will return at " + self.endTime.time().__str__().split('.')[0])
         return self.endTime
@@ -32,7 +33,7 @@ class Expedition:
             return None
         bigSuccess, resource = self.game.getExpeditionResult(self)
         self.game.addResource(resource)
-        self.fleet.setRunningExpedition(False)
+        self.fleet.setRunningExpedition(None)
         self.fleet = None
         self.endTime = None
         return bigSuccess

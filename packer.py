@@ -29,8 +29,7 @@ class Packer:
     def makeFleet(self, data):
         id_ = int(data['id'])
         ships = [ self.game.getShip(int(x)) for x in data['ships'] ]
-        status = int(data['status'])
-        return Fleet(self.game, id_, ships, status)
+        return Fleet(self.game, id_, ships)
 
     def makeExpedition(self, data):
         shipNum = int(data['needShipNum'])
