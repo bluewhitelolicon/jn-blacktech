@@ -11,8 +11,7 @@ while True:
     for fleet in game.fleets:
         exp = fleet.expedition
         if exp is not None and datetime.now() > exp.endTime:
-            Log.i('Restarting expedition ' + str(exp.id) + '...')
             exp.getResult()
             exp.start(fleet)
-
+            Log.i('Restarted expedition %d' % exp.id)
     time.sleep(10)

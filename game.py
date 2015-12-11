@@ -11,6 +11,7 @@ class Game:
         self.fleets = [ None, None, None, None ]
         self.expeditions = { }
         self.repairYards = [ None, None, None, None ]
+        self.maxShipNum = 0
 
         self.packer = Packer(self)
 
@@ -53,6 +54,8 @@ class Game:
             ry = self.packer.makeRepairYard(repairYardData)
             self.repairYards[ry.id - 1] = ry
 
+        self.maxShipNum = int(self.userData['userVo']['detailInfo']['shipNumTop'])
+
         Log.i('Done')
 
     def getShipClass(self, id_):
@@ -61,8 +64,19 @@ class Game:
     def getShip(self, id_):
         return self.ships[id_]
 
+    def findShip(self, name):
+        ret = None
+        for ship in self.ships.values():
+            if ship.getName() == name:
+                if ret is None or ret.lv < ship.lv:
+                    ret = ship
+        return ret
+
     def getFleet(self, id_):
         return self.fleets[id_ - 1]
+
+    def isDormFull(self):
+        return len(self.ships) >= self.maxShipNum
 
     def addShip(self, ship):
         self.ships[ship.id] = ship

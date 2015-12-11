@@ -27,9 +27,12 @@ class Fleet:
     def fill(self):
         if self.expedition is not None:
             return False
-        self.game.fill(self)
         for ship in self.ships:
-            ship.setFilled()
+            if not ship.isFilled():
+                self.game.fill(self)
+                for ship in self.ships:
+                    ship.setFilled()
+                return True
         return True
 
     def changeShips(self, ships):

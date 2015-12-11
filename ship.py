@@ -22,14 +22,24 @@ class Ship:
         self.fuel = ship.fuel
         self.ammo = ship.ammo
 
+    def getName(self):
+        return self.shipClass.name
+
     def getShipType(self):
         return self.shipClass.shipType
 
     def isIdle(self):
-        return self.status == Ship.Idle and self.fleet.expedition is None
+        if self.status != Ship.Idle:
+            return False
+        if self.fleet is not None and self.fleet.expedition is not None:
+            return False
+        return True
 
     def isInjured(self):
         return self.hp < self.maxHp
+
+    def isBroken(self):
+        return self.hp * 2 < self.maxHp
 
     def isBadlyBroken(self):
         return self.hp * 4 < self.maxHp
