@@ -10,19 +10,20 @@ class Game:
         self.ships = { }
         self.fleets = [ None, None, None, None ]
         self.expeditions = { }
+        self.repairYards = [ None, None, None, None ]
 
         self.packer = Packer(self)
 
         Log.i('Initializing game...')
         self.conn = Connection('2.1.0')
-        gameData = self.conn.get('/index/getInitConfigs/')
+        self.gameData = self.conn.get('/index/getInitConfigs/')
 
-        for shipClassData in gameData['shipCard']:
+        for shipClassData in self.gameData['shipCard']:
             if int(shipClassData['npc']) == 0 and int(shipClassData['release']) == 1:
                 shipClass = self.packer.makeShipClass(shipClassData)
                 self.shipClasses[shipClass.id] = shipClass
 
-        for expeditionData in gameData['pveExplore']:
+        for expeditionData in self.gameData['pveExplore']:
             expedition = self.packer.makeExpedition(expeditionData)
             self.expeditions[expedition.id] = expedition
 
@@ -32,21 +33,25 @@ class Game:
         self.conn.get('//index/login/' + loginData['userId'])
 
         Log.i('Initializing user data...')
-        userData = self.conn.get('/api/initGame/')
+        self.userData = self.conn.get('/api/initGame/')
 
-        for shipData in userData['userShipVO']:
+        for shipData in self.userData['userShipVO']:
             ship = self.packer.makeShip(shipData)
             self.ships[ship.id] = ship
 
-        for fleetData in userData['fleetVo']:
+        for fleetData in self.userData['fleetVo']:
             fleet = self.packer.makeFleet(fleetData)
             self.fleets[fleet.id - 1] = fleet
 
-        for expStatusData in userData['pveExploreVo']['levels']:
+        for expStatusData in self.userData['pveExploreVo']['levels']:
             exp = self.expeditions[int(expStatusData['exploreId'])]
             fleet = self.fleets[int(expStatusData['fleetId']) - 1]
             endTime = datetime.fromtimestamp(int(expStatusData['endTime']))
             exp.setStatus(fleet, endTime)
+
+        for repairYardData in self.userData['repairDockVo']:
+            ry = self.packer.makeRepairYard(repairYardData)
+            self.repairYards[ry.id - 1] = ry
 
         Log.i('Done')
 
@@ -70,11 +75,14 @@ class Game:
 
     # Ship
 
-    def repair(self, ship, pos):
-        self.conn.get('/boat/repair/%d/%d/' % (ship.id, pos))
+    def repair(self, ship, repairYard):
+        self.conn.get('/boat/repair/%d/%d/' % (ship.id, repairYard.id))
+        for ryData in data['repairDockVo']:
+            if int(ryData['id']) == repairYard.id:
+                return datetime.fromtimestamp(int(ryData['endTime']))
 
-    def repairComplete(self, ship, pos):
-        self.conn.get('/boat/repairComplete/%d/%d/' % (pos, ship.id))
+    def repairComplete(self, repairYard):
+        self.conn.get('/boat/repairComplete/%d/%d/' % (repairYard.id, repairYard.ship.id))
 
     def dismantleShip(self, ship, keepEquipt = False):
         self.conn.get('/dock/dismantleBoat/[%d]/%d/' % (ship.id, (0 if keepEquipt else 1)))

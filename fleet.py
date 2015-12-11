@@ -37,4 +37,6 @@ class Fleet:
             return False
         self.game.changeShips(self, ships)
         self.ships = ships
+        for ship in ships:
+            ship.fleet = self
         return True

@@ -2,7 +2,10 @@ from shipclass import ShipClass
 from ship import Ship
 from fleet import Fleet
 from expedition import Expedition, FleetRequirement
+from repairyard import RepairYard
 from resource import Resource
+
+from datetime import datetime
 
 class Packer:
     def __init__(self, game):
@@ -43,10 +46,14 @@ class Packer:
         extraAward = self.makeResource(data['pruductGoods'])
         return Expedition(self.game, id_, time, fr, basicAward, extraAward)
 
-    def makeExpeditionStatus(self, data):
-        fleet = self.game.getFleet(int(data['fleetId']))
-        endTime = datetime.fromtimestamp(int(data['endTime']))
-        return ExpeditionStatus(fleet, endTime)
+    def makeRepairYard(self, data):
+        id_ = int(data['id'])
+        if 'shipId' in data:
+            ship = self.game.getShip(int(data['shipId']))
+            endTime = datetime.fromtimestamp(int(data['endTime']))
+            return RepairYard(self.game, id_, ship, endTime)
+        else:
+            return RepairYard(self.game, id_)
 
     def makeResource(self, data):
         fuel = 0

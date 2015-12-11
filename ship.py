@@ -9,7 +9,7 @@ class Ship:
         self.shipClass = shipClass
         self.lv = lv
         self.hp = hp
-        self.maxHp = hp
+        self.maxHp = maxHp
         self.fuel = fuel
         self.ammo = ammo
         self.status = Ship.Idle
@@ -18,21 +18,27 @@ class Ship:
     def setProps(self, ship):
         self.lv = ship.lv
         self.hp = ship.hp
-        self.maxHp = ship.hp
+        self.maxHp = ship.maxHp
         self.fuel = ship.fuel
         self.ammo = ship.ammo
+
+    def getShipType(self):
+        return self.shipClass.shipType
 
     def isIdle(self):
         return self.status == Ship.Idle and self.fleet.expedition is None
 
-    def getShipType(self):
-        return self.shipClass.shipType
+    def isInjured(self):
+        return self.hp < self.maxHp
 
     def isBadlyBroken(self):
         return self.hp * 4 < self.maxHp
 
     def isFilled(self):
         return self.fuel == self.shipClass.fuel and self.ammo == self.shipClass.ammo
+
+    def setRepaired(self):
+        self.hp = self.maxHp
 
     def setFilled(self):
         self.fuel = self.shipClass.fuel

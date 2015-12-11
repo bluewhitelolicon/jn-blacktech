@@ -49,11 +49,12 @@ class Battle:
 
     def getResult(self, doNightBattle, waitTime = 0):
         newShip, ships = self.game.getBattleResult(doNightBattle)
-        self.game.addShip(newShip)
+        if newShip is not None:
+            self.game.addShip(newShip)
         for i in range(len(self.fleet.ships)):
-            fleet.ships[i].setProps(ships[i])
+            self.fleet.ships[i].setProps(ships[i])
         time.sleep(waitTime)
-        return newShip, fleet.getShipHp()
+        return newShip, self.fleet.getShipHp()
 
     def quit(self):
         self.game.quitStage()

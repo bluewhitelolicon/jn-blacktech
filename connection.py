@@ -20,6 +20,7 @@ class Connection:
         self.server = Connection.defaultServer
         self.cookie = None
         self.debug = debug
+        self.lastResponse = None
 
     def setServer(self, server):
         self.server = server
@@ -30,7 +31,8 @@ class Connection:
         headers = self.createHeaders()
         conn = self.createConnection()
         conn.request('GET', url, None, headers)
-        return self.parseResponse(conn.getresponse())
+        self.lastResponse = self.parseResponse(conn.getresponse())
+        return self.lastResponse
 
     def post(self, url, param):
         Log.d('POST ' + url)
@@ -39,7 +41,8 @@ class Connection:
         headers = self.createHeaders(param)
         conn = self.createConnection()
         conn.request('POST', url, param, headers)
-        return self.parseResponse(conn.getresponse())
+        self.lastResponse = self.parseResponse(conn.getresponse())
+        return self.lastResponse
 
     def completeUrl(self, url):
         ts = str(math.trunc(time.time()))
