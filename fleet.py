@@ -39,7 +39,15 @@ class Fleet:
         if self.expedition is not None:
             return False
         self.game.changeShips(self, ships)
-        self.ships = ships
+        for ship in self.ships:
+            ship.fleet = None
         for ship in ships:
             ship.fleet = self
+        self.ships = ships
         return True
+
+    def printHp(self):
+        ret = ''
+        for ship in self.ships:
+            ret += '%d/%d ' % (ship.hp, ship.maxHp)
+        return ret

@@ -1,10 +1,11 @@
 from datetime import datetime
 import os
+import traceback
 
 class Log:
-    verboseLevel = 'd'
-
+    verboseLevel = 'i'
     logFile = open('log.txt', 'a')
+    errorCodes = { }
 
     def v(msg):
         if Log.verboseLevel is 'v':
@@ -20,7 +21,11 @@ class Log:
         Log.showMsg('WARNING', msg)
 
     def e(msg, halt = True):
+        if type(msg) is int: # eid
+            msg = "%d:%s" % (msg, Log.errorCodes[msg])
+
         Log.showMsg('ERROR', msg)
+        traceback.print_stack();
         if halt:
             Log.logFile.close()
             os._exit(0)

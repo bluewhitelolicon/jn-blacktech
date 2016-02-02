@@ -2,21 +2,27 @@ from connection import Connection
 from packer import Packer
 from log import Log
 
+import time
 from datetime import datetime
 
 class Game:
     def __init__(self, account):
+        self.username = account['username']
+        self.password = account['password']
+        self.server = account['server']
+
         self.shipClasses = { }
         self.ships = { }
         self.fleets = [ None, None, None, None ]
         self.expeditions = { }
         self.repairYards = [ None, None, None, None ]
         self.maxShipNum = 0
+        self.errorCodes = { }
 
         self.packer = Packer(self)
 
         Log.i('Initializing game...')
-        self.conn = Connection('2.1.0')
+        self.conn = Connection()
         self.gameData = self.conn.get('/index/getInitConfigs/')
 
         for shipClassData in self.gameData['shipCard']:
@@ -28,13 +34,22 @@ class Game:
             expedition = self.packer.makeExpedition(expeditionData)
             self.expeditions[expedition.id] = expedition
 
+        Log.errorCodes = { int(k) : v for k, v in self.gameData['errorCode'].items() }
+
         Log.i('Logging in...')
-        loginData = self.conn.get('/index/passportLogin/%s/%s/' % (account['username'], account['password']))
-        self.conn.setServer(account['server'])
+        loginData = self.conn.httpsGet('/index/passportLogin/%s/%s/' % (self.username, self.password))
+        self.conn.setServer(self.server)
+        time.sleep(1)
         self.conn.get('//index/login/' + loginData['userId'])
 
         Log.i('Initializing user data...')
         self.userData = self.conn.get('/api/initGame/')
+        self.conn.get('/pevent/getPveData/')
+        self.conn.get('/pve/getPveData/')
+        time.sleep(5)
+        self.conn.get('/active/getUserData/')
+        self.conn.get('/campaign/getUserData/')
+        self.conn.get('/pve/getUserData/')
 
         for shipData in self.userData['userShipVO']:
             ship = self.packer.makeShip(shipData)
@@ -58,16 +73,28 @@ class Game:
 
         Log.i('Done')
 
+    def restart(self):
+        self.conn = Connection()
+        self.conn.get('/index/getInitConfigs/')
+        loginData = self.conn.get('/index/passportLogin/%s/%s/' % (self.username, self.password))
+        self.conn.setServer(self.server)
+        self.conn.get('//index/login/' + loginData['userId'])
+        self.conn.get('/api/initGame/')
+        Log.i('Game restarted')
+
     def getShipClass(self, id_):
         return self.shipClasses[id_]
 
     def getShip(self, id_):
         return self.ships[id_]
 
-    def findShip(self, name):
+    def findShip(self, name, lv = None):
         ret = None
         for ship in self.ships.values():
             if ship.getName() == name:
+                if lv is not None and ship.lv == lv:
+                    Log.i('Found ship %s of level %d, id: %d' % (name, ship.lv, ship.id))
+                    return ship
                 if ret is None or ret.lv < ship.lv:
                     ret = ship
         return ret
@@ -90,7 +117,7 @@ class Game:
     # Ship
 
     def repair(self, ship, repairYard):
-        self.conn.get('/boat/repair/%d/%d/' % (ship.id, repairYard.id))
+        data = self.conn.get('/boat/repair/%d/%d/' % (ship.id, repairYard.id))
         for ryData in data['repairDockVo']:
             if int(ryData['id']) == repairYard.id:
                 return datetime.fromtimestamp(int(ryData['endTime']))
@@ -98,7 +125,10 @@ class Game:
     def repairComplete(self, repairYard):
         self.conn.get('/boat/repairComplete/%d/%d/' % (repairYard.id, repairYard.ship.id))
 
-    def dismantleShip(self, ship, keepEquipt = False):
+    def instantRepair(self, ship):
+        self.conn.get('/boat/instantRepairShips/[%d]/' % ship.id)
+
+    def dismantleShip(self, ship, keepEquipt = True):
         self.conn.get('/dock/dismantleBoat/[%d]/%d/' % (ship.id, (0 if keepEquipt else 1)))
 
     # Fleet
@@ -150,7 +180,7 @@ class Game:
             return [ ]
         return [ int(ship['type']) for ship in data['enemyVO']['enemyShips'] ]
 
-    def engage(self, spot, fleet, formation):
+    def startBattle(self, spot, fleet, formation):
         data = self.conn.get('/pve/deal/%d/%d/%d/' % (spot, fleet.id, formation))
         selfHp = data['warReport']['hpBeforeNightWarSelf']
         enemyHp = data['warReport']['hpBeforeNightWarEnemy']

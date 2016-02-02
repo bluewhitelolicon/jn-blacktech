@@ -1,15 +1,14 @@
 from log import Log
 
 from collections import OrderedDict
-from http.client import HTTPConnection
+from http.client import HTTPConnection, HTTPSConnection
 import hashlib, json, math, random, time, zlib
 
 class Connection:
     defaultServer = 'login.jianniang.com'
-    defaultVersion = '2.1.0'
+    defaultVersion = '2.2.1'
     secretKey = 'ade2688f1904e9fb8d2efdb61b5e398a'
     defaultUrlSettings = '&gz=1&market=2&channel=0'
-
     userAgent = 'Dalvik/2.1.0 (Linux; U; Android 6.0; sdk_phone_armv7 Build/MRA44C)'
     debugPort = 8080
 
@@ -30,6 +29,15 @@ class Connection:
         url = self.completeUrl(url)
         headers = self.createHeaders()
         conn = self.createConnection()
+        conn.request('GET', url, None, headers)
+        self.lastResponse = self.parseResponse(conn.getresponse())
+        return self.lastResponse
+
+    def httpsGet(self, url):
+        Log.d('GET ' + url)
+        url = self.completeUrl(url)
+        headers = self.createHeaders()
+        conn = HTTPSConnection(self.server)
         conn.request('GET', url, None, headers)
         self.lastResponse = self.parseResponse(conn.getresponse())
         return self.lastResponse
@@ -84,7 +92,7 @@ class Connection:
         if cookie is not None:
             self.setCookie(cookie)
         if 'eid' in data:
-            Log.w('eid:%d' % data['eid'])
+            Log.e(int(data['eid']))
         Log.v(data)
         return data
 
@@ -107,7 +115,7 @@ class Connection:
         ('Accept-Encoding', 'identity'),
         ('User-Agent', userAgent),
         ('Host', None),
-        ('Connection', 'Keep-Alive')
+        ('Connection', 'close')
     ])
 
     cookieHeaders = OrderedDict([
@@ -115,7 +123,7 @@ class Connection:
         ('Cookie', None),
         ('User-Agent', userAgent),
         ('Host', None),
-        ('Connection', 'Keep-Alive')
+        ('Connection', 'close')
     ])
 
     postHeaders = OrderedDict([
@@ -124,6 +132,6 @@ class Connection:
         ('Content-Type', 'application/x-www-form-urlencoded'),
         ('User-Agent', userAgent),
         ('Host', None),
-        ('Connection', 'Keep-Alive'),
+        ('Connection', 'close'),
         ('Content-Length', None)
     ])

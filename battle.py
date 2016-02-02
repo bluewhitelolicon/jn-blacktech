@@ -3,7 +3,10 @@ from log import Log
 import time
 
 class Battle:
+    # stageId: 1-1 is 101, 1-2 is 102, 2-3 is 203, ...
     def __init__(self, game, stageId, fleet):
+        if game.isDormFull():
+            Log.e('Dormitory is full')
         if not fleet.isReady():
             Log.w('Fleet ' + str(fleet.id) + ' is not ready for battle')
             self.spot = -1
@@ -14,6 +17,7 @@ class Battle:
             self.spot = 0
             self.canChase = None
 
+    # go to next spot
     def go(self, moveTime = 5, searchTime = 5):
         if self.spot == -1:
             Log.w('Battle: something wrong')
@@ -22,10 +26,10 @@ class Battle:
         time.sleep(moveTime)
         ret = self.game.searchEnemy(self.spot)
         time.sleep(searchTime)
-        return ret
+        return self.spot, ret
 
-    def engage(self, formation, waitTime = 30):
-        selfHp, enemyHp, lastSpot = self.game.engage(self.spot, self.fleet, formation)
+    def start(self, formation, waitTime = 30):
+        selfHp, enemyHp, lastSpot = self.game.startBattle(self.spot, self.fleet, formation)
 
         canChase = False
         for hp in enemyHp:
@@ -51,8 +55,8 @@ class Battle:
         newShip, ships = self.game.getBattleResult(doNightBattle)
         if newShip is not None:
             self.game.addShip(newShip)
-        for i in range(len(self.fleet.ships)):
-            self.fleet.ships[i].setProps(ships[i])
+        for ship in ships:
+            self.game.getShip(ship.id).setProps(ship)
         time.sleep(waitTime)
         return newShip, self.fleet.getShipHp()
 

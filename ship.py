@@ -1,3 +1,5 @@
+from log import Log
+
 class Ship:
     # status
     Idle = 0
@@ -30,8 +32,10 @@ class Ship:
 
     def isIdle(self):
         if self.status != Ship.Idle:
+            Log.i("Ship %s' status: %d" % (self.getName(), self.status))
             return False
         if self.fleet is not None and self.fleet.expedition is not None:
+            Log.i('In fleet %d, expedition is %d' % (self.fleet.id, self.fleet.expedition.id))
             return False
         return True
 
@@ -54,6 +58,13 @@ class Ship:
         self.fuel = self.shipClass.fuel
         self.ammo = self.shipClass.ammo
 
-    def dismantle(self):
-        self.game.dismantleShip(self)
+    def instantRepair(self):
+        if not self.isInjured():
+            return False
+        self.game.instantRepair(self)
+        self.setRepaired()
+        return True
+
+    def dismantle(self, keepEquipt = False):
+        self.game.dismantleShip(self, keepEquipt)
         self.game.removeShip(self)
